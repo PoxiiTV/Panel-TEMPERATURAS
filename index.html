@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel de Temperaturas · Demo</title>
+<style>
+:root{
+  --bg:#091321; --bg2:#0d1929; --panel:#111d2e; --panel2:#142235;
+  --border:rgba(255,255,255,.075); --text:#edf3fb; --muted:#a6b2c3;
+  --blue:#4aa3ff; --orange:#ffae2e; --green:#53d58b; --red:#ff5a5f; --amber:#ffbe0b;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--text);background:radial-gradient(circle at 50% -30%,#182942 0,#091321 46%,#07101c 100%);min-height:100vh}
+.app{display:grid;grid-template-columns:70px 1fr;min-height:100vh}
+.sidebar{border-right:1px solid var(--border);background:rgba(8,18,31,.65);display:flex;flex-direction:column;align-items:center;padding-top:22px}
+.sidebar .sbtn{width:44px;height:44px;border:1px solid transparent;background:transparent;border-radius:11px;color:#b9c3cf;font-size:21px;cursor:pointer;display:grid;place-items:center}
+.sidebar .sbtn.on{background:#132640;border-color:rgba(85,163,255,.2);color:#61adff}
+.main{min-width:0}
+.topbar{height:84px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.brand{display:flex;align-items:center;gap:14px;font-size:23px;font-weight:750;letter-spacing:.2px}
+.brand-icon{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#55b2ff,#254e91);display:grid;place-items:center;font-size:21px;box-shadow:0 8px 24px rgba(42,121,224,.22)}
+.sticker{margin-left:10px;background:linear-gradient(135deg,#ffb020,#ff7a18);color:#1a1206;font-size:11px;font-weight:800;letter-spacing:.4px;padding:4px 10px;border-radius:20px;text-transform:uppercase;box-shadow:0 3px 12px rgba(255,122,24,.4)}
+.actions{display:flex;gap:14px;align-items:center}
+.dot{width:11px;height:11px;border-radius:50%;background:#4ed58a;box-shadow:0 0 12px rgba(78,213,138,.55)}
+.demobadge{height:40px;border:1px solid rgba(255,180,32,.3);border-radius:9px;background:rgba(255,176,32,.1);color:#ffb020;padding:0 16px;display:flex;align-items:center;gap:9px;font-size:15px;font-weight:600}
+.content{padding:34px 29px 28px;max-width:1500px;margin:auto}
+.section-title{display:flex;align-items:center;gap:13px;color:#cbd3dd;font-weight:750;letter-spacing:1.3px;font-size:17px;margin:6px 0 22px}
+.section-title .icon{color:#4da7ff;font-size:25px;letter-spacing:0}
+.temp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+.card{background:linear-gradient(145deg,rgba(20,33,51,.98),rgba(15,27,43,.98));border:1px solid var(--border);border-radius:17px;padding:25px;box-shadow:0 15px 35px rgba(0,0,0,.14)}
+.card h3{margin:0;color:#eef3fa;font-size:17px;font-weight:700}
+.subtitle{margin-top:6px;color:var(--muted);font-size:15px}
+.temp-row{display:flex;align-items:center;justify-content:space-between;margin:28px 0 20px;gap:12px}
+.gauge{--p:0;--c:var(--green);width:123px;height:123px;border-radius:50%;
+  background:conic-gradient(var(--c) calc(var(--p)*1%),#293444 0);position:relative;display:grid;place-items:center;flex:none}
+.gauge:before{content:"";position:absolute;inset:8px;border-radius:50%;background:#121f30}
+.gauge .num{position:relative;text-align:center;font-size:33px;font-weight:780;line-height:1}
+.gauge .unit{position:relative;font-size:15px;color:#d1d9e4;margin-top:5px}
+.peak{min-width:92px;color:#b9c4d1;font-size:15px;line-height:1.5}
+.peak small{display:block;font-size:11px;color:#8997aa}
+.peak b{display:block;font-size:18px;color:var(--green);margin-top:2px}
+.spark{height:48px;margin-top:8px}
+.spark svg{width:100%;height:100%;display:block;overflow:visible}
+.footer-line{border-top:1px solid rgba(255,255,255,.055);margin-top:14px;padding-top:16px;color:#98a6b8;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.system{margin-top:34px}
+.system-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px}
+.system-card{padding:29px 26px}
+.label{display:flex;gap:13px;align-items:center;color:#d3d9e2;font-weight:650}
+.label i{font-style:normal;color:#b7c5d8;font-size:22px}
+.big{font-size:38px;font-weight:790;margin:26px 0 15px;letter-spacing:-1px}
+.big small{font-size:20px;color:#abb6c4;letter-spacing:0}
+.bar{height:12px;background:#263346;border-radius:20px;overflow:hidden;margin:18px 0 12px}
+.fill{height:100%;width:0;background:linear-gradient(90deg,#4b9dff,#4474bd);border-radius:inherit;transition:width .5s ease}
+.fill.ram{background:linear-gradient(90deg,#8a5fff,#aa61d4)}
+.smalltext{color:#aab6c5;font-size:15px}
+.uptime{font-size:30px;margin-top:34px;margin-bottom:20px}
+.bottom-grid{display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:22px;margin-top:27px}
+.mini{min-height:95px;padding:21px 24px;display:flex;align-items:center;gap:18px}
+.mini .mi{font-size:34px;color:#55a8ff}
+.mini b{display:block;font-size:16px;margin-bottom:5px}
+.status{margin-left:auto;color:#63cf8d;font-size:14px;display:flex;align-items:center;gap:9px}
+.tip{margin-top:24px;padding:20px 24px;border:1px solid rgba(75,163,255,.12);background:linear-gradient(90deg,rgba(20,47,76,.42),rgba(15,27,43,.65));border-radius:14px;color:#aebdcd;font-size:15px}
+.tip b{color:#6eb3ff}
+/* demo notice */
+.demo-note{margin:0 29px 6px;padding:12px 18px;border:1px solid rgba(255,176,32,.25);background:rgba(255,176,32,.07);border-radius:12px;color:#ffc35c;font-size:14px;display:flex;align-items:center;gap:9px}
+@media(max-width:1100px){.temp-grid{grid-template-columns:repeat(2,1fr)}.system-grid{grid-template-columns:1fr 1fr}.bottom-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.app{grid-template-columns:1fr}.sidebar{display:none}.topbar{padding:0 15px;height:72px}.brand{font-size:16px}.brand-icon{width:38px;height:38px}.content{padding:22px 14px}.temp-grid,.system-grid{grid-template-columns:1fr}.big{font-size:34px}.actions .demobadge{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="sbtn on" title="Panel">▦</div>
+    <div class="sbtn" title="Ajustes (no disponibles en demo)">🛠</div>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="brand"><div class="brand-icon">🖥</div><span>Panel de Temperaturas</span><span class="sticker">MODO DEMO</span></div>
+      <div class="actions">
+        <div class="demobadge"><span class="dot"></span>Datos simulados</div>
+      </div>
+    </header>
+
+    <div class="demo-note">🎲 <b>Esta es una DEMO</b> — los valores son aleatorios y cambian cada segundo. No hay datos reales ni ajustes.</div>
+
+    <div class="content">
+      <div class="section-title"><span class="icon">♨</span> TEMPERATURAS</div>
+      <section class="temp-grid" id="temps"></section>
+      <section class="system">
+        <div class="section-title"><span class="icon">▱</span> SISTEMA</div>
+        <div class="system-grid">
+          <article class="card system-card"><div class="label"><i>▣</i>Uso de CPU</div><div class="big" id="cpu-u">—<small>%</small></div><div class="bar"><div class="fill" id="cpu-fill"></div></div><div class="smalltext">Carga: <span id="load">—</span></div></article>
+          <article class="card system-card"><div class="label"><i>▤</i>Memoria RAM</div><div class="big" id="mem-u">—<small>GB</small></div><div class="bar"><div class="fill ram" id="ram-fill"></div></div><div class="smalltext">Disponible: <span id="mem-a">—</span> GB</div></article>
+          <article class="card system-card"><div class="label"><i>◷</i>Tiempo encendido</div><div class="big uptime" id="up">—</div><div class="smalltext">Proxmox · red local</div></article>
+        </div>
+        <div class="bottom-grid">
+          <div class="card mini"><div class="mi">⌁</div><div><b>Red local</b><div class="smalltext">LAN</div></div><div class="status"><span class="dot"></span>Conectado</div></div>
+          <div class="card mini"><div class="mi">〽</div><div><b>Actualización</b><div class="smalltext">Cada 1 segundo</div></div></div>
+          <div class="card mini"><div class="mi" style="color:#56d58b">♢</div><div><b>Sistema seguro</b><div class="smalltext">● Todo funcionando</div></div></div>
+        </div>
+        <div class="tip"><b>ⓘ &nbsp;Consejo:</b> En la demo los picos se reinician al recargar la página. La versión real guarda el máximo histórico.</div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+// ============================= SIMULADOR =============================
+// estado de cada sensor con valor actual + tope aleatorio (walk + picos)
+const sensors={
+  cpu:{v:65,min:52,max:92},
+  gpu:{v:55,min:42,max:72},
+  sda:{v:40,min:38,max:44},
+  sdb:{v:41,min:38,max:45},
+};
+const history={cpu:[],gpu:[],sda:[],sdb:[]};
+const peaks={cpu:{v:0,ts:0},gpu:{v:0,ts:0},sda:{v:0,ts:0},sdb:{v:0,ts:0}};
+let boot=Date.now();
+function rnd(a){return a+Math.random()*2-1;}
+function sysCpu(){return Math.max(2,Math.min(98,(2+Math.sin(Date.now()/4000)*3+Math.random()*8)));}
+function step(name){
+  const s=sensors[name];
+  s.v+=((Math.random()*2-1)*3.2);
+  // a veces picos
+  if(Math.random()<0.06) s.v+=Math.random()*14;
+  s.v=Math.max(s.min,Math.min(s.max,s.v));
+  return s.v;
+}
+function tickDemo(){
+  const now=Date.now();const secs=Math.floor((now-boot)/1000);
+  // actualizar y agrupar valores
+  const vals={cpu:step('cpu'),gpu:step('gpu'),sda:step('sda'),sdb:step('sdb')};
+  // historial
+  for(const n in history){history[n].push(vals[n]);if(history[n].length>120)history[n].shift();}
+  // picos
+  for(const n in peaks){if(vals[n]>peaks[n].v){peaks[n].v=vals[n];peaks[n].ts=now;}}
+  // pintar tarjetas
+  CARDS.forEach(c=>{
+    const cid='t'+c.id,val=vals[c.id];
+    document.getElementById(cid+'-v').textContent=val.toFixed(1);
+    const color=colCfg(val);
+    const g=document.getElementById(cid+'-g');
+    g.style.setProperty('--c',color);g.style.setProperty('--p',Math.min(100,(val/95)*100));
+    const pk=peaks[c.id];
+    const pkb=document.getElementById(cid+'-pk');pkb.style.color=peaks[c.id].v?colCfg(peaks[c.id].v):'#7d8899';
+    pkb.textContent=peaks[c.id].v.toFixed(1)+' °C';
+    document.getElementById(cid+'-pt').textContent=hora(peaks[c.id].ts);
+    document.getElementById(cid+'-s').innerHTML=sparkSVG(history[c.id].slice(-60),color);
+  });
+  // sistema
+  const u=sysCpu();
+  document.getElementById('cpu-u').innerHTML=u.toFixed(0)+'<small>%</small>';
+  document.getElementById('cpu-fill').style.width=Math.min(100,u)+'%';
+  const mu=4+Math.random()*1.5;
+  document.getElementById('mem-u').innerHTML=mu.toFixed(1)+'<small>GB</small>';
+  document.getElementById('ram-fill').style.width=Math.min(100,(mu/15)*100)+'%';
+  document.getElementById('mem-a').textContent=(15-mu).toFixed(1);
+  const ld=(u/8).toFixed(2);
+  document.getElementById('load').textContent=`${ld} / ${(u/10).toFixed(2)} / ${(u/12).toFixed(2)}`;
+  document.getElementById('up').textContent=`${Math.floor(secs/86400)}d ${Math.floor(secs%86400/3600)}h ${Math.floor(secs%3600/60)}m`;
+}
+// =============================================================
+const colCfg=v=>v>80?'#ff5a5f':v>75?'#ffbe0b':'#53d58b';
+const CARDS=[
+  {id:'cpu',ttl:'CPU',sub:'Procesador'},
+  {id:'gpu',ttl:'GPU',sub:'Gráfica'},
+  {id:'sda',ttl:'Disco SDA',sub:'Disco 1'},
+  {id:'sdb',ttl:'Disco SDB',sub:'Disco 2'},
+];
+const hora=ts=>{const d=new Date(ts*1000||ts);const dd=d.toLocaleDateString('es');const tt=d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});return dd+'  '+tt;};
+function sparkSVG(series,color){
+  const W=260,H=42,P=4,max=95;
+  const pts=(series||[]).filter(v=>v!=null);
+  if(pts.length<2) return '<svg viewBox="0 0 260 42"></svg>';
+  const X=i=>P+(i/(pts.length-1))*((W-P*2));
+  const Y=v=>H-2-((v)/max)*(H-6);
+  let d='M'+X(0).toFixed(1)+' '+Y(pts[0]).toFixed(1);
+  for(let i=1;i<pts.length;i++){
+    const cx2=(X(i-1)+X(i))/2;
+    d+=' C'+cx2.toFixed(1)+' '+Y(pts[i-1]).toFixed(2)+', '+cx2.toFixed(1)+' '+Y(pts[i]).toFixed(2)+', '+X(i).toFixed(1)+' '+Y(pts[i]).toFixed(2);
+  }
+  const gid='g'+Math.random().toString(36).slice(2,8);
+  return '<svg viewBox="0 0 260 42" preserveAspectRatio="none">'+
+    '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0" stop-color="'+color+'" stop-opacity="0.30"/>'+
+    '<stop offset="1" stop-color="'+color+'" stop-opacity="0"/>'+
+    '</linearGradient></defs>'+
+    '<path d="'+d+' L'+X(pts.length-1).toFixed(1)+' '+(H-2)+' L'+X(0).toFixed(1)+' '+(H-2)+' Z" fill="url(#'+gid+')"/>'+
+    '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '</svg>';
+}
+// construir tarjetas
+const temps=document.getElementById('temps');
+CARDS.forEach(c=>{
+  const cid='t'+c.id;
+  temps.insertAdjacentHTML('beforeend',`
+    <article class="card temp-card">
+      <h3>${c.ttl}</h3><div class="subtitle">${c.sub}</div>
+      <div class="temp-row">
+        <div class="gauge" id="${cid}-g"><div><div class="num" id="${cid}-v">—</div><div class="unit">°C</div></div></div>
+        <div class="peak">Pico máx.<small>demo</small><b id="${cid}-pk">—</b></div>
+      </div>
+      <div class="spark" id="${cid}-s"></div>
+      <div class="footer-line">◷ <span id="${cid}-pt">—</span></div>
+    </article>`);
+});
+// barra lateral: ajustes bloqueados (aviso)
+document.querySelectorAll('.sidebar .sbtn')[1].addEventListener('click',()=>{
+  alert('⚠️ Ajustes no disponibles en modo demo');
+});
+tickDemo();
+setInterval(tickDemo,1000);
+</script>
+</body>
+</html>
