@@ -1,26 +1,66 @@
+<div align="center">
+
 # 🌡️ Panel de Temperaturas
 
-> Monitor de hardware en tiempo real para un **Proxmox**, con picos máximos, historial gráfico, **alarmas por Telegram** y **panel de ajustes**. **Solo red local** 🌐🔒
+**Monitor de hardware en tiempo real para Proxmox** — temperaturas en vivo, picos máximos, sparklines, alarmas por Telegram y panel de ajustes.
 
-![Panel de Temperaturas](screenshot.png)
+[![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Proxmox](https://img.shields.io/badge/Proxmox-VE-E57000?style=for-the-badge&logo=proxmox&logoColor=white)]()
+[![GitHub Pages](https://img.shields.io/badge/Demo-GitHub%20Pages-222222?style=for-the-badge&logo=githubpages&logoColor=white)](https://poxiitv.github.io/Panel-TEMPERATURAS/)
+[![Sin dependencias](https://img.shields.io/badge/Cero%20dependencias-✔-3DD68C?style=for-the-badge)]()
+[![Solo LAN](https://img.shields.io/badge/Solo-LAN-4AA3FF?style=for-the-badge)]()
 
-Dashboard oscuro y moderno que muestra la **temperatura en vivo** de CPU, GPU y discos, se actualiza configurablemente (**0.1 s – 5 s**), guarda el **pico máximo histórico** incluso si cierras la página, dibuja una **sparkline** por sensor y te **avisa por Telegram** cuando la CPU se dispara.
+</div>
 
 ---
 
-## ✨ Características
+## 🎮 Pruébalo en vivo (DEMO)
 
-- 🌡️ **4 tarjetas de temperatura**: CPU, GPU, Disco SDA, Disco SDB.
-- ⏱️ **Actualización configurable**: 0.1 s / 0.25 s / 0.5 s / 1 s / 2 s / 5 s.
-- 🎨 **Colores del gauge configurables** (umbral verde→amarillo→rojo y referencia máxima).
-- 📈 **Sparkline** en cada tarjeta (curva SVG suave de la evolución reciente).
-- 🔺 **Pico máximo registrado** con fecha/hora — persiste aunque cierres la web.
-- ↺ **Botón "Reiniciar máximos"**.
-- 🚨 **Alarma por Telegram**: si la CPU supera el umbral, aviso + temperatura **cada segundo durante N segundos** (seguimiento en vivo).
-- 🛠️ **Panel de ajustes** en la propia web: edita umbrales, colores, velocidad de refresco, token del bot y chat ID, con botón de **prueba de alarma**.
-- 💾 **Configuración persistente** en `config.json` (editable e inmediata).
-- ⚙️ **Sistema**: uso de CPU, memoria RAM, tiempo encendido, red local, estado seguro.
-- 💾 **Backend ligero** en Python puro (stdlib, cero dependencias).
+<div align="center">
+
+[**🚀 ABRIR LA DEMO**](https://poxiitv.github.io/Panel-TEMPERATURAS/)
+
+*Valores simulados y aleatorios — sin datos reales, sin ajustes.*
+
+</div>
+
+---
+
+## ✨ Ficha rápida
+
+<div align="center">
+
+| | |
+|---|---|
+| 🌡️ **4 sensores** · CPU · GPU · Disco 1 · Disco 2 | ⏱️ **Actualización** configurable (0.1 s – 5 s) |
+| 📈 **Sparkline** en cada tarjeta | 🔺 **Pico máximo** persistente con fecha |
+| 🚨 **Alarma Telegram** con seguimiento en vivo | 🛠️ **Panel de ajustes** integrado |
+| 🎨 **Colores de umbral** configurables | 💾 **Config persistente** en `config.json` |
+
+</div>
+
+---
+
+## 🧩 Cómo se ve
+
+![Panel de Temperaturas](screenshot.png)
+
+---
+
+## 📦 Componentes
+
+<div align="center">
+
+| Archivo | Función |
+|---|---|
+| 🎨 `index.html` | Panel web + ⚙️ pantalla de ajustes |
+| 🛰️ `host_server.py` | Recopilador del host: picos, historial, config |
+| 🌐 `lxc_server.py` | Panel-proxy (reenvía GET y POST) |
+| 🚨 `alarm.py` | Alarma de temperatura → Telegram |
+| ⚙️ `minipc-monitor.service` | Servicio del recopilador |
+| ⚙️ `temp-alarm.service` | Servicio de la alarma |
+
+</div>
 
 ---
 
@@ -46,19 +86,6 @@ El hardware (sensores) solo es visible desde el **host Proxmox**, así que el si
 ```
 
 > **¿Por qué dos?** Los LXC/contenedores **no ven el hardware real** (`/sys/class/hwmon`). El recopilador debe vivir en el host; el panel web puede ir aparte (aquí, en el LXC de webs con pm2).
-
----
-
-## 📦 Archivos
-
-| Archivo | Rol |
-|---|---|
-| `index.html` | 🎨 El panel web + ⚙️ pantalla de ajustes |
-| `host_server.py` | 🛰️ Recopilador del host + picos + historial + `config.json` |
-| `lxc_server.py` | 🌐 Panel-proxy (reenvía GET y POST) |
-| `alarm.py` | 🚨 Alarma de temperatura → Telegram (lee la config) |
-| `minipc-monitor.service` | ⚙️ Servicio systemd del recopilador |
-| `temp-alarm.service` | ⚙️ Servicio systemd de la alarma Telegram |
 
 ---
 
@@ -110,7 +137,7 @@ Entra en la pestaña **🛠 Ajustes** (barra lateral). Ahí puedes configurar, y
 - **🚨 Alarma Telegram**: umbral de alarma (°C), segundos de seguimiento, histéresis.
 - **🤖 Bot de Telegram**: token del bot + chat ID, con instrucciones y botón **🧪 Probar alarma**.
 
-Boton **💾 Guardar** aplica todo; se persiste en `config.json` del host.
+El botón **💾 Guardar** aplica todo y persiste en `config.json`.
 
 ---
 
@@ -141,7 +168,7 @@ Seguimiento 20 s…
 ✅ Fin del seguimiento.
 ```
 
-Tiene **histéresis** (no re-alarma hasta bajar X ° por debajo del umbral). El token y chat se configuran en el panel o en `config.json`.
+Tiene **histéresis** (no re-alarma hasta bajar X ° por debajo del umbral).
 
 ---
 
@@ -161,4 +188,8 @@ Tiene **histéresis** (no re-alarma hasta bajar X ° por debajo del umbral). El 
 
 ---
 
-Hecho con 💙 para tener el Mini PC siempre bajo control. ¡Que no explote! 🔥
+<div align="center">
+
+Hecho con 💙 para tener el servidor siempre bajo control. ¡Que no explote! 🔥
+
+</div>
