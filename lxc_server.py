@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Mini PC — PANEL web (LXC 102 / Webs). Sirve index.html y hace de puente
+# PANEL web. Sirve index.html y hace de puente
 # al recopilador de sensores del host (IP configurable).
 import json, urllib.request, urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -51,5 +51,5 @@ class H(BaseHTTPRequestHandler):
         self._handle(self.path.replace('?', ' ').split()[0], 'POST')
 
 if __name__ == '__main__':
-    print(f'Mini PC panel en {BIND}:{PORT} -> host {HOST}')
+    print(f'Panel en {BIND}:{PORT} -> host {HOST}')
     ThreadingHTTPServer((BIND, PORT), H).serve_forever()
