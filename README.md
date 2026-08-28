@@ -2,10 +2,10 @@
 
 # 🌡️ Panel de Temperaturas
 
-**Monitor de hardware en tiempo real para Proxmox** — temperaturas en vivo, picos máximos, sparklines, alarmas por Telegram y panel de ajustes.
+**Monitor de hardware en tiempo real para cualquier sistema Linux** — temperaturas en vivo, picos máximos, sparklines, alarmas por Telegram y panel de ajustes.
 
 [![Python](https://img.shields.io/badge/Python-3.8+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Proxmox](https://img.shields.io/badge/Proxmox-VE-E57000?style=for-the-badge&logo=proxmox&logoColor=white)]()
+[![Linux](https://img.shields.io/badge/Linux-Universal-FCC624?style=for-the-badge&logo=linux&logoColor=black)]()
 [![GitHub Pages](https://img.shields.io/badge/Demo-GitHub%20Pages-222222?style=for-the-badge&logo=githubpages&logoColor=white)](https://poxiitv.github.io/Panel-TEMPERATURAS/)
 [![Sin dependencias](https://img.shields.io/badge/Cero%20dependencias-✔-3DD68C?style=for-the-badge)]()
 [![Solo LAN](https://img.shields.io/badge/Solo-LAN-4AA3FF?style=for-the-badge)]()
@@ -47,6 +47,36 @@
 
 ---
 
+## 🧱 Universal · cómo funciona
+
+> **Funciona en cualquier Linux**, no depende de una distro ni de un hipervisor concreto. Se compone de **un recopilador de sensores** y **un panel web** que se comunican por HTTP:
+
+```
+┌───────────────────────────────┐        ┌────────────────────────────────┐
+│    SISTEMA / HOST (Linux)     │        │   PANEL / donde lo alojes       │
+│                              │  HTTP  │                                │
+│  host_server.py   :8686      │◄──────►│  lxc_server.py   :8787         │
+│  • lee sensores /sys         │        │  • sirve el panel (index.html) │
+│  • sampler 5s en 2º plano    │        │  • proxy a :8686 (GET+POST)    │
+│  • picos → peaks.json        │        │  • acceso: http://:8787        │
+│  • histórico de temperaturas │        │                                │
+│  • config.json (ajustes)     │        │                                │
+│  • /api/config + /api/reset  │        │                                │
+│                              │        │                                │
+│  temp-alarm.service (alarm.py)│       │                                │
+│  • vigila CPU, envía Telegram │       │                                │
+└───────────────────────────────┘        └────────────────────────────────┘
+```
+
+> **¿Por qué dos partes?** En sistemas virtualizados/contenedores, los contenedores (LXC/Docker) **no ven el hardware real** (`/sys/class/hwmon`). El recopilador debe vivir en el **host** (donde están los sensores); el panel web puede ir en el mismo host o en otro sitio.
+
+El código solo usa **librerías estándar de Python** (`http.server`, `urllib`, `json`, `subprocess`) y lee datos del kernel que existen en **cualquier Linux**:
+- 🌡️ Temperaturas CPU/GPU → `/sys/class/hwmon`
+- 💾 Temperatura de discos → `smartctl` (opcional)
+- ⚙️ Uso de CPU/RAM → `/proc`
+
+---
+
 ## 📦 Componentes
 
 <div align="center">
@@ -54,7 +84,7 @@
 | Archivo | Función |
 |---|---|
 | 🎨 `index.html` | Panel web + ⚙️ pantalla de ajustes |
-| 🛰️ `host_server.py` | Recopilador del host: picos, historial, config |
+| 🛰️ `host_server.py` | Recopilador: picos, historial, config |
 | 🌐 `lxc_server.py` | Panel-proxy (reenvía GET y POST) |
 | 🚨 `alarm.py` | Alarma de temperatura → Telegram |
 | ⚙️ `minipc-monitor.service` | Servicio del recopilador |
@@ -64,34 +94,9 @@
 
 ---
 
-## 🧱 Arquitectura
-
-El hardware (sensores) solo es visible desde el **host Proxmox**, así que el sistema se divide en **dos procesos** + **una alarma**:
-
-```
-┌───────────────────────────────┐        ┌────────────────────────────────┐
-│  HOST PROXMOX  (el host)      │        │  LXC "Webs" (el panel)      │
-│                              │  HTTP  │                                │
-│  host_server.py   :8686      │◄──────►│  lxc_server.py   :8787         │
-│  • lee sensores /sys          │        │  • sirve el panel (index.html) │
-│  • sampler 5s en 2º plano     │        │  • proxy a :8686 (GET+POST)    │
-│  • picos → peaks.json         │        │  • acceso: http://:8787        │
-│  • histórico de temperaturas  │        │                                │
-│  • config.json (ajustes)      │        │                                │
-│  • /api/config + /api/reset   │        │                                │
-│                              │        │                                │
-│  temp-alarm.service (alarm.py)│        │                                │
-│  • vigila CPU, envía Telegram │        │                                │
-└───────────────────────────────┘        └────────────────────────────────┘
-```
-
-> **¿Por qué dos?** Los LXC/contenedores **no ven el hardware real** (`/sys/class/hwmon`). El recopilador debe vivir en el host; el panel web puede ir aparte (aquí, en el LXC de webs con pm2).
-
----
-
 ## 🚀 Instalación y configuración
 
-### 1) Recopilador + alarma — HOST Proxmox
+### 1) Recopilador + alarma — en el host Linux
 
 ```bash
 mkdir -p /opt/monitor
@@ -108,7 +113,7 @@ systemctl status minipc-monitor temp-alarm   # → ambos active
 
 > ✏️ Ajusta en `host_server.py`: `DISKS` (tus discos), `SAMPLE_S` (muestreo de picos).
 
-### 2) Panel — LXC / donde sea
+### 2) Panel — el mismo host o aparte
 
 ```bash
 mkdir -p /opt/minipc-panel
@@ -123,7 +128,7 @@ pm2 save
 ### 3) Abre el panel
 
 ```
-http://<ip-del-lxc>:8787
+http://<ip-del-host-o-panel>:8787
 ```
 
 ---
@@ -175,7 +180,7 @@ Tiene **histéresis** (no re-alarma hasta bajar X ° por debajo del umbral).
 ## 🛠️ Requisitos
 
 - 🐍 **Python 3** (solo **stdlib**): `http.server`, `urllib`, `json`, `subprocess`.
-- 🐧 **Linux** con `smartctl` para temperatura de discos (opcional).
+- 🐧 **Cualquier Linux** con `smartctl` para temperatura de discos (opcional).
 - 🌐 Navegador moderno para el panel.
 
 ---
@@ -190,6 +195,6 @@ Tiene **histéresis** (no re-alarma hasta bajar X ° por debajo del umbral).
 
 <div align="center">
 
-Hecho con 💙 para tener el servidor siempre bajo control. ¡Que no explote! 🔥
+Hecho con 💙 para tener tu sistema siempre bajo control. ¡Que no explote! 🔥
 
 </div>
