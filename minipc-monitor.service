@@ -1,5 +1,5 @@
 [Unit]
-Description=Mini PC monitor panel (local)
+Description=Panel de temperaturas (recopilador local)
 After=network.target
 
 [Service]
