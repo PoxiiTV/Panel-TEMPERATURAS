@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panel de Temperaturas</title>
+<style>
+:root{
+  --bg:#091321; --bg2:#0d1929; --panel:#111d2e; --panel2:#142235;
+  --border:rgba(255,255,255,.075); --text:#edf3fb; --muted:#a6b2c3;
+  --blue:#4aa3ff; --orange:#ffae2e; --green:#53d58b; --red:#ff5a5f; --amber:#ffbe0b;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color:var(--text);background:radial-gradient(circle at 50% -30%,#182942 0,#091321 46%,#07101c 100%);min-height:100vh}
+.app{display:grid;grid-template-columns:70px 1fr;min-height:100vh}
+.sidebar{border-right:1px solid var(--border);background:rgba(8,18,31,.65);display:flex;flex-direction:column;align-items:center;padding-top:22px}
+.sidebar .sbtn{width:44px;height:44px;border:1px solid transparent;background:transparent;border-radius:11px;color:#b9c3cf;font-size:21px;cursor:pointer;display:grid;place-items:center}
+.sidebar .sbtn:hover{background:rgba(255,255,255,.06)}
+.sidebar .sbtn.on{background:#132640;border-color:rgba(85,163,255,.2);color:#61adff}
+.main{min-width:0}
+.topbar{height:84px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.brand{display:flex;align-items:center;gap:14px;font-size:23px;font-weight:750;letter-spacing:.2px}
+.brand-icon{width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,#55b2ff,#254e91);display:grid;place-items:center;font-size:21px;box-shadow:0 8px 24px rgba(42,121,224,.22)}
+.actions{display:flex;gap:14px;align-items:center}
+.live,.reset{height:40px;border:1px solid var(--border);border-radius:9px;background:#101d2d;color:#cbd4df;padding:0 16px;display:flex;align-items:center;gap:9px;font-size:15px}
+.dot{width:11px;height:11px;border-radius:50%;background:#4ed58a;box-shadow:0 0 12px rgba(78,213,138,.55)}
+.dot.err{background:var(--red);box-shadow:0 0 12px rgba(255,90,95,.55)}
+.reset{cursor:pointer;font:inherit}
+.content{padding:34px 29px 28px;max-width:1500px;margin:auto}
+.section-title{display:flex;align-items:center;gap:13px;color:#cbd3dd;font-weight:750;letter-spacing:1.3px;font-size:17px;margin:6px 0 22px}
+.section-title .icon{color:#4da7ff;font-size:25px;letter-spacing:0}
+.temp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:22px}
+.card{background:linear-gradient(145deg,rgba(20,33,51,.98),rgba(15,27,43,.98));border:1px solid var(--border);border-radius:17px;padding:25px;box-shadow:0 15px 35px rgba(0,0,0,.14)}
+.temp-card{min-height:auto}
+.card h3{margin:0;color:#eef3fa;font-size:17px;font-weight:700}
+.subtitle{margin-top:6px;color:var(--muted);font-size:15px}
+.temp-row{display:flex;align-items:center;justify-content:space-between;margin:28px 0 20px;gap:12px}
+.gauge{--p:0;--c:var(--green);width:123px;height:123px;border-radius:50%;
+  background:conic-gradient(var(--c) calc(var(--p)*1%),#293444 0);position:relative;display:grid;place-items:center;flex:none}
+.gauge:before{content:"";position:absolute;inset:8px;border-radius:50%;background:#121f30}
+.gauge .num{position:relative;text-align:center;font-size:33px;font-weight:780;line-height:1}
+.gauge .unit{position:relative;font-size:15px;color:#d1d9e4;margin-top:5px}
+.peak{min-width:92px;color:#b9c4d1;font-size:15px;line-height:1.5}
+.peak small{display:block;font-size:11px;color:#8997aa}
+.peak b{display:block;font-size:18px;color:var(--green);margin-top:2px}
+.spark{height:48px;margin-top:8px}
+.spark svg{width:100%;height:100%;display:block;overflow:visible}
+.footer-line{border-top:1px solid rgba(255,255,255,.055);margin-top:14px;padding-top:16px;color:#98a6b8;font-size:13.5px;display:flex;align-items:center;gap:8px}
+.system{margin-top:34px}
+.system-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:22px}
+.system-card{padding:29px 26px}
+.label{display:flex;gap:13px;align-items:center;color:#d3d9e2;font-weight:650}
+.label i{font-style:normal;color:#b7c5d8;font-size:22px}
+.big{font-size:38px;font-weight:790;margin:26px 0 15px;letter-spacing:-1px}
+.big small{font-size:20px;color:#abb6c4;letter-spacing:0}
+.bar{height:12px;background:#263346;border-radius:20px;overflow:hidden;margin:18px 0 12px}
+.fill{height:100%;width:0;background:linear-gradient(90deg,#4b9dff,#4474bd);border-radius:inherit;transition:width .5s ease}
+.fill.ram{background:linear-gradient(90deg,#8a5fff,#aa61d4)}
+.smalltext{color:#aab6c5;font-size:15px}
+.uptime{font-size:30px;margin-top:34px;margin-bottom:20px}
+.bottom-grid{display:grid;grid-template-columns:1fr 1.1fr 1fr;gap:22px;margin-top:27px}
+.mini{min-height:95px;padding:21px 24px;display:flex;align-items:center;gap:18px}
+.mini .mi{font-size:34px;color:#55a8ff}
+.mini b{display:block;font-size:16px;margin-bottom:5px}
+.status{margin-left:auto;color:#63cf8d;font-size:14px;display:flex;align-items:center;gap:9px}
+.tip{margin-top:24px;padding:20px 24px;border:1px solid rgba(75,163,255,.12);background:linear-gradient(90deg,rgba(20,47,76,.42),rgba(15,27,43,.65));border-radius:14px;color:#aebdcd;font-size:15px}
+.tip b{color:#6eb3ff}
+/* ---- Ajustes ---- */
+.settings-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px}
+.field{margin-bottom:16px}
+.field label{display:block;font-size:13px;color:#aebdcd;margin-bottom:6px;font-weight:600}
+.field input,.field select{width:100%;background:#0d1929;border:1px solid var(--border);border-radius:8px;color:var(--text);padding:9px 12px;font-size:14px;font-family:inherit}
+.field input:focus,.field select:focus{outline:none;border-color:var(--blue)}
+.field .hint{font-size:11.5px;color:#7d8ba0;margin-top:4px}
+.switch-label{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.settings-actions{display:flex;gap:14px;margin-top:22px;flex-wrap:wrap}
+.btn{padding:11px 18px;border-radius:9px;border:1px solid var(--border);background:#142235;color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{filter:brightness(1.1)}
+.btn.prim{background:linear-gradient(135deg,#4aa3ff,#254e91);border:none}
+.btn.ok{background:linear-gradient(135deg,#3dd68c,#1f8f56);border:none}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.msg{padding:10px 14px;border-radius:8px;font-size:14px;margin-top:14px}
+.msg.good{background:rgba(61,214,140,.15);border:1px solid rgba(61,214,140,.4)}
+.msg.bad{background:rgba(255,90,95,.15);border:1px solid rgba(255,90,95,.4)}
+.hidden{display:none}
+@media(max-width:1100px){.temp-grid{grid-template-columns:repeat(2,1fr)}.system-grid{grid-template-columns:1fr 1fr}.bottom-grid{grid-template-columns:1fr}}
+@media(max-width:650px){.app{grid-template-columns:1fr}.sidebar{display:none}.topbar{padding:0 15px;height:72px}.brand{font-size:18px}.actions .live{display:none}.content{padding:22px 14px}.temp-grid,.system-grid{grid-template-columns:1fr}.reset{padding:0 10px}.brand-icon{width:38px;height:38px}.topbar{gap:10px}.big{font-size:34px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <button class="sbtn on" id="btnDash" title="Panel">▦</button>
+    <button class="sbtn" id="btnSet" title="Ajustes">🛠</button>
+  </aside>
+  <main class="main">
+    <header class="topbar">
+      <div class="brand"><div class="brand-icon">🖥</div><span>Panel de Temperaturas</span></div>
+      <div class="actions">
+        <div class="live"><span class="dot" id="dot"></span><span id="status">En vivo</span></div>
+        <button class="reset" id="resetBtn">↻&nbsp; Reiniciar máximos</button>
+      </div>
+    </header>
+
+    <!-- Vista principal -->
+    <div class="content" id="viewDash">
+      <div class="section-title"><span class="icon">♨</span> TEMPERATURAS</div>
+      <section class="temp-grid" id="temps"></section>
+      <section class="system">
+        <div class="section-title"><span class="icon">▱</span> SISTEMA</div>
+        <div class="system-grid">
+          <article class="card system-card"><div class="label"><i>▣</i>Uso de CPU</div><div class="big" id="cpu-u">—<small>%</small></div><div class="bar"><div class="fill" id="cpu-fill"></div></div><div class="smalltext">Carga: <span id="load">—</span></div></article>
+          <article class="card system-card"><div class="label"><i>▤</i>Memoria RAM</div><div class="big" id="mem-u">—<small>GB</small></div><div class="bar"><div class="fill ram" id="ram-fill"></div></div><div class="smalltext">Disponible: <span id="mem-a">—</span> GB</div></article>
+          <article class="card system-card"><div class="label"><i>◷</i>Tiempo encendido</div><div class="big uptime" id="up">—</div><div class="smalltext">Proxmox · red local</div></article>
+        </div>
+        <div class="bottom-grid">
+          <div class="card mini"><div class="mi">⌁</div><div><b>Red local</b><div class="smalltext">LAN</div></div><div class="status"><span class="dot"></span>Conectado</div></div>
+          <div class="card mini"><div class="mi">〽</div><div><b>Actualización</b><div class="smalltext"><span id="upd-txt">Cada 1 segundo</span></div></div></div>
+          <div class="card mini"><div class="mi" style="color:#56d58b">♢</div><div><b>Sistema seguro</b><div class="smalltext">● Todo funcionando</div></div></div>
+        </div>
+        <div class="tip"><b>ⓘ &nbsp;Consejo:</b> Los valores de pico se reinician automáticamente al reiniciar los máximos.</div>
+      </section>
+    </div>
+
+    <!-- Vista ajustes -->
+    <div class="content hidden" id="viewSet">
+      <div class="section-title"><span class="icon">🛠</span> AJUSTES</div>
+      <div class="settings-cards">
+        <div class="card">
+          <h3>🌡️ Temperaturas</h3><div class="subtitle">Umbrales de color del gauge</div>
+          <div class="field"><label>Verde hasta (≤)</label><input type="number" step="0.5" id="cfg_green" /></div>
+          <div class="field"><label>Amarillo hasta (≤)</label><input type="number" step="0.5" id="cfg_red" /></div>
+          <div class="field"><label>Referencia máxima del gauge (°C)</label><input type="number" step="0.5" id="cfg_max" /></div>
+        </div>
+        <div class="card">
+          <h3>🔄 Actualización</h3><div class="subtitle">Cada cuánto se refresca el panel</div>
+          <div class="field"><label>Intervalo (ms)</label>
+            <select id="cfg_update">
+              <option value="100">0.1 s (100 ms)</option>
+              <option value="250">0.25 s (250 ms)</option>
+              <option value="500">0.5 s (500 ms)</option>
+              <option value="1000" selected>1 s (1000 ms)</option>
+              <option value="2000">2 s (2000 ms)</option>
+              <option value="5000">5 s (5000 ms)</option>
+            </select>
+            <div class="hint">A menor intervalo, más precisa la curva pero más carga.</div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>🚨 Alarma Telegram</h3><div class="subtitle">Se envía al sobrepasar el umbral</div>
+          <div class="field"><label>Umbral de alarma (°C)</label><input type="number" step="0.5" id="cfg_alarm" /></div>
+          <div class="field"><label>Seguimiento (segundos)</label><input type="number" step="1" id="cfg_follow" /></div>
+          <div class="field"><label>Histéresis (re-armar a X° por debajo)</label><input type="number" step="0.5" id="cfg_hyst" /></div>
+        </div>
+        <div class="card" style="grid-column:1/-1">
+          <h3>🤖 Bot de Telegram</h3><div class="subtitle">Token y chat de destino de las alarmas</div>
+          <div class="field"><label>Bot token</label><input type="text" id="cfg_token" placeholder="123456:ABC..." autocomplete="off" /></div>
+          <div class="field"><label>Chat ID</label><input type="text" id="cfg_chat" placeholder="1100299662" /></div>
+          <div class="hint" style="margin-bottom:14px">📖 <b>Cómo crear el bot:</b> en Telegram busca <b>@BotFather</b> → <i>/newbot</i> → ponle nombre → te da el <b>token</b>. Para el <b>chat ID</b>, escribe en ese chat y usa <i>@userinfobot</i> (o usa tu ID personal). Guarda y pulsa «Probar alarma».</div>
+          <div class="settings-actions">
+            <button class="btn prim" id="saveCfg">💾 Guardar</button>
+            <button class="btn ok" id="testAlarm">🧪 Probar alarma</button>
+          </div>
+          <div class="msg hidden" id="cfgmsg"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const sessionPeak={};
+const hora=ts=>{const d=new Date(ts*1000);const dd=d.toLocaleDateString('es');const tt=d.toLocaleTimeString('es',{hour:'2-digit',minute:'2-digit'});return dd+'  '+tt;};
+function setPeak(n,v){if(v==null)return;const p=sessionPeak[n];if(!p||v>p.v)sessionPeak[n]={v,t:Date.now()/1000};}
+// config actual (se rellena desde el backend en init)
+let cfg={alarm_threshold:95,alarm_follow:20,alarm_hysteresis:5,color_green:75,color_red:80,temp_max:95,update_ms:1000,bot_token:'',chat_id:'1100299662'};
+// color segun la config (verde<=green, >green y <=red = amarillo, >red = rojo)
+const colCfg=v=>{if(v==null)return'#53d58b';return v>cfg.color_red?'#ff5a5f':v>cfg.color_green?'#ffbe0b':'#53d58b';};
+const CARDS=[
+  {id:'cpu',pk:'cpu_temp',ttl:'CPU',sub:'Procesador',get:c=>c.cpu_temp,hist:h=>h&&h.cpu},
+  {id:'gpu',pk:'gpu_temp',ttl:'GPU',sub:'Gráfica',get:c=>c.gpu_temp,hist:h=>h&&h.gpu},
+  {id:'sda',pk:'/dev/sda',ttl:'Disco SDA',sub:'Disco 1',get:c=>c.disk&&c.disk['/dev/sda'],hist:h=>h&&h.sda},
+  {id:'sdb',pk:'/dev/sdb',ttl:'Disco SDB',sub:'Disco 2',get:c=>c.disk&&c.disk['/dev/sdb'],hist:h=>h&&h.sdb},
+];
+const temps=document.getElementById('temps');
+temps.innerHTML='';
+CARDS.forEach(c=>{
+  const cid='t'+c.id;
+  temps.insertAdjacentHTML('beforeend',`
+    <article class="card temp-card">
+      <h3>${c.ttl}</h3><div class="subtitle">${c.sub}</div>
+      <div class="temp-row">
+        <div class="gauge" id="${cid}-g"><div><div class="num" id="${cid}-v">—</div><div class="unit">°C</div></div></div>
+        <div class="peak">Pico máx.<small>registrado</small><b id="${cid}-pk">—</b></div>
+      </div>
+      <div class="spark" id="${cid}-s"></div>
+      <div class="footer-line">◷ <span id="${cid}-pt">—</span></div>
+    </article>`);
+});
+function sparkSVG(series,color){
+  const W=260,H=42,P=4,max=cfg.temp_max;
+  const pts=(series||[]).filter(v=>v!=null);
+  if(pts.length<2) return '<svg viewBox="0 0 260 42"></svg>';
+  const X=i=>P+(i/(pts.length-1))*((W-P*2));
+  const Y=v=>H-2-((v)/max)*(H-6);
+  let d='M'+X(0).toFixed(1)+' '+Y(pts[0]).toFixed(1);
+  for(let i=1;i<pts.length;i++){
+    const cx2=(X(i-1)+X(i))/2;
+    d+=' C'+cx2.toFixed(1)+' '+Y(pts[i-1]).toFixed(2)+', '+cx2.toFixed(1)+' '+Y(pts[i]).toFixed(2)+', '+X(i).toFixed(1)+' '+Y(pts[i]).toFixed(2);
+  }
+  const gid='g'+Math.random().toString(36).slice(2,8);
+  return '<svg viewBox="0 0 260 42" preserveAspectRatio="none">'+
+    '<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0" stop-color="'+color+'" stop-opacity="0.30"/>'+
+    '<stop offset="1" stop-color="'+color+'" stop-opacity="0"/>'+
+    '</linearGradient></defs>'+
+    '<path d="'+d+' L'+X(pts.length-1).toFixed(1)+' '+(H-2)+' L'+X(0).toFixed(1)+' '+(H-2)+' Z" fill="url(#'+gid+')"/>'+
+    '<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>'+
+    '</svg>';
+}
+function updTxt(){const ms=cfg.update_ms;$('upd-txt').textContent=ms<1000?`Cada ${(ms/1000).toFixed(2).replace(/0$/,'')} segundos`:`Cada ${ms/1000} segundo${ms>=2000?'s':''}`;}
+async function tick(){
+  try{
+    const r=await fetch('/api/stats',{cache:'no-store'});if(!r.ok)throw 0;
+    const d=await r.json(),cur=d.current,pk=d.peaks||{},hist=d.history||[];
+    document.getElementById('dot').style.background='#4ed58a';document.getElementById('status').textContent='En vivo';
+    CARDS.forEach(c=>{
+      const cid='t'+c.id,val=c.get(cur);
+      if(pk[c.pk]&&pk[c.pk].v!=null)setPeak(cid,pk[c.pk].v);
+      setPeak(cid,val);
+      const sp=sessionPeak[cid];
+      document.getElementById(cid+'-v').textContent=val==null?'—':val.toFixed(1);
+      const color=colCfg(val);
+      const g=document.getElementById(cid+'-g');
+      g.style.setProperty('--c',color);
+      g.style.setProperty('--p',Math.min(100,((val||0)/cfg.temp_max)*100));
+      const pkb=document.getElementById(cid+'-pk');pkb.style.color=sp?colCfg(sp.v):'#7d8899';
+      pkb.textContent=sp?sp.v.toFixed(1)+' °C':'—';
+      document.getElementById(cid+'-pt').textContent=sp?hora(sp.t):'—';
+      const serie=hist.map(c.hist).filter(v=>v!=null);
+      document.getElementById(cid+'-s').innerHTML=sparkSVG(serie,color);
+    });
+    document.getElementById('cpu-u').innerHTML=(cur.cpu_usage!=null?cur.cpu_usage:'—')+'<small>%</small>';
+    document.getElementById('load').textContent=(cur.load||[]).map(x=>x.toFixed(2)).join(' / ');
+    document.getElementById('mem-u').innerHTML=(cur.mem.used_gb!=null?cur.mem.used_gb:'—')+'<small>GB</small>';
+    document.getElementById('ram-fill').style.width=Math.min(100,(cur.mem.used_gb/cur.mem.total_gb)*100)+'%';
+    document.getElementById('mem-a').textContent=cur.mem.avail_gb;
+    document.getElementById('up').textContent=cur.uptime;
+    document.getElementById('cpu-fill').style.width=Math.min(100,cur.cpu_usage||0)+'%';
+  }catch(e){document.getElementById('dot').style.background='#ff5a5f';document.getElementById('status').textContent='Sin conexión';}
+}
+document.getElementById('resetBtn').onclick=async()=>{
+  try{const r=await fetch('/api/reset',{method:'POST'});if(!r.ok)throw 0;
+    for(const k in sessionPeak)delete sessionPeak[k];
+    const b=document.getElementById('resetBtn');b.textContent='✓ Máximos reiniciados';
+    setTimeout(()=>b.textContent='↻ Reiniciar máximos',1500);tick();
+  }catch(e){}
+};
+// ---- vistas ----
+function show(s){$('viewDash').classList.toggle('hidden',s!=='dash');$('viewSet').classList.toggle('hidden',s!=='set');$('btnDash').classList.toggle('on',s==='dash');$('btnSet').classList.toggle('on',s==='set');}
+$('btnDash').onclick=()=>show('dash');$('btnSet').onclick=()=>{loadCfgUI();show('set');};
+// ---- config ----
+async function loadCfg(){
+  try{const r=await fetch('/api/config',{cache:'no-store'});if(r.ok)cfg=Object.assign({},cfg,await r.json());}catch(e){}
+  updTxt();
+}
+function loadCfgUI(){
+  $('cfg_green').value=cfg.color_green;$('cfg_red').value=cfg.color_red;$('cfg_max').value=cfg.temp_max;
+  $('cfg_update').value=cfg.update_ms;$('cfg_alarm').value=cfg.alarm_threshold;$('cfg_follow').value=cfg.alarm_follow;
+  $('cfg_hyst').value=cfg.alarm_hysteresis;$('cfg_token').value=cfg.bot_token;$('cfg_chat').value=cfg.chat_id;
+}
+function msg(txt,good){const m=$('cfgmsg');m.textContent=txt;m.classList.remove('hidden','good','bad');m.classList.add(good?'good':'bad');}
+$('saveCfg').onclick=async()=>{
+  const newCfg={
+    color_green:parseFloat($('cfg_green').value),color_red:parseFloat($('cfg_red').value),temp_max:parseFloat($('cfg_max').value),
+    update_ms:parseInt($('cfg_update').value),alarm_threshold:parseFloat($('cfg_alarm').value),alarm_follow:parseInt($('cfg_follow').value),
+    alarm_hysteresis:parseFloat($('cfg_hyst').value),bot_token:$('cfg_token').value.trim(),chat_id:$('cfg_chat').value.trim()
+  };
+  try{
+    const r=await fetch('/api/config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newCfg)});
+    if(!r.ok)throw 0;const d=await r.json();cfg=Object.assign({},cfg,d.config);
+    // reinicia el intervalo de actualizacion
+    clearInterval(timer);timer=setInterval(tick,cfg.update_ms);
+    updTxt();msg('✅ Configuración guardada',true);tick();
+  }catch(e){msg('❌ No se pudo guardar',false);}
+};
+$('testAlarm').onclick=async()=>{
+  msg('Enviando prueba…',true);
+  try{
+    const r=await fetch('/api/test_alarm',{method:'POST'});const d=await r.json();
+    msg(d.ok?'✅ Prueba enviada — revisa tu Telegram':'❌ Fallo: '+(d.error||'revisa token y chat'),d.ok);
+  }catch(e){msg('❌ Error de conexión',false);}
+};
+let timer;
+async function init(){
+  await loadCfg();loadCfgUI();tick();timer=setInterval(tick,cfg.update_ms);
+}
+init();
+</script>
+</body>
+</html>

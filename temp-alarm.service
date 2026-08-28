@@ -1,0 +1,12 @@
+[Unit]
+Description=Alarma de temperatura -> Telegram
+After=network-online.target minipc-monitor.service
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/python3 /opt/monitor/alarm.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
