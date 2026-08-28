@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Mini PC — RECOPILADOR de sensores (host Proxmox, obligatorio: los contenedores
+# RECOPILADOR de sensores (host Linux, obligatorio: los contenedores
 # no ven el hardware). Mantiene el pico maximo de temperatura de forma persistente
 # registrándolo EN SEGUNDO PLANO (aunque nadie mire la web) y expone una API.
 # El panel web vive en el LXC de webs (IP configurable) y consume esta API.
@@ -212,7 +212,7 @@ class H(BaseHTTPRequestHandler):
                 body=json.dumps(_load_config()).encode()
             self._send(200, body, 'application/json')
         else:
-            self._send(200, b'Mini PC collector OK', 'text/plain')
+            self._send(200, b'Panel collector OK', 'text/plain')
     def do_POST(self):
         path=self.path.replace('?',' ').split()[0]
         if path=='/api/reset':
@@ -252,5 +252,5 @@ class H(BaseHTTPRequestHandler):
 threading.Thread(target=sampler_loop, daemon=True).start()
 
 if __name__=='__main__':
-    print(f'Mini PC collector en {BIND}:{PORT}')
+    print(f'Recopilador en {BIND}:{PORT}')
     ThreadingHTTPServer((BIND, PORT), H).serve_forever()
